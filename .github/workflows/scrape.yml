@@ -1,0 +1,47 @@
+name: WebScraper RANDSTAD to Peviitor
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run scraper
+        run: npm run scrape
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+
+      - name: Check for new jobs
+        run: |
+          if [ -f jobs.json ]; then
+            echo "New jobs found:"
+            cat jobs.json | jq '.jobs | length'
+          else
+            echo "No new jobs or scrape failed"
+          fi
+
+      - name: Upload jobs JSON
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scraped-jobs
+          path: |
+            jobs.json
+            jobs_existing.json
+          retention-days: 7
