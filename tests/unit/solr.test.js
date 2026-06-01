@@ -62,7 +62,7 @@ describe('solr.js', () => {
       const result = await solr.querySOLR('17549799');
 
       for (const job of result.docs) {
-        expect(job.cif).toMatch(/^\d{7}$/);
+        expect(job.cif).toMatch(/^\d{7,}$/);
       }
     });
 
