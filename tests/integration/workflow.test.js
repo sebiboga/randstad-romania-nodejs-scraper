@@ -1,12 +1,20 @@
 import { jest } from '@jest/globals';
 
+const HAS_SOLR = !!process.env.SOLR_AUTH;
+
+function itIfSolr(name, fn, timeout) {
+  if (HAS_SOLR) {
+    return it(name, fn, timeout);
+  }
+  return it.skip(`${name} (skipped: SOLR_AUTH not set)`, fn, timeout);
+}
+
 describe('Integration: API Workflow', () => {
 
   describe('Full company validation workflow', () => {
-    it('should go from brand to validated company', async () => {
+    itIfSolr('should go from brand to validated company', async () => {
       const demoanaf = await import('../../demoanaf.js');
       const company = await import('../../company.js');
-      const solr = await import('../../solr.js');
 
       const searchResults = await demoanaf.searchCompany('RANDSTAD');
       expect(searchResults.length).toBeGreaterThan(0);
@@ -26,7 +34,7 @@ describe('Integration: API Workflow', () => {
   });
 
   describe('Company Core Model Validation', () => {
-    it('should have all required fields per company model', async () => {
+    itIfSolr('should have all required fields per company model', async () => {
       const solr = await import('../../solr.js');
 
       const result = await solr.queryCompanySOLR('id:17549799');

@@ -1,5 +1,14 @@
 import { jest } from '@jest/globals';
 
+const HAS_SOLR = !!process.env.SOLR_AUTH;
+
+function itIfSolr(name, fn, timeout) {
+  if (HAS_SOLR) {
+    return it(name, fn, timeout);
+  }
+  return it.skip(`${name} (skipped: SOLR_AUTH not set)`, fn, timeout);
+}
+
 describe('solr.js', () => {
   let solr;
 
@@ -8,7 +17,7 @@ describe('solr.js', () => {
   });
 
   describe('querySOLR', () => {
-    it('should return response object with docs', async () => {
+    itIfSolr('should return response object with docs', async () => {
       const result = await solr.querySOLR('17549799');
 
       expect(result).toHaveProperty('numFound');
@@ -18,7 +27,7 @@ describe('solr.js', () => {
   });
 
   describe('querySOLRByCompany', () => {
-    it('should return jobs for company name', async () => {
+    itIfSolr('should return jobs for company name', async () => {
       const result = await solr.querySOLRByCompany('RANDSTAD*');
 
       expect(result).toHaveProperty('numFound');
@@ -27,7 +36,7 @@ describe('solr.js', () => {
   });
 
   describe('queryCompanySOLR', () => {
-    it('should return company data', async () => {
+    itIfSolr('should return company data', async () => {
       const result = await solr.queryCompanySOLR('company:RANDSTAD*');
 
       expect(result).toHaveProperty('numFound');
@@ -49,7 +58,7 @@ describe('solr.js', () => {
   });
 
   describe('getSolrAuth', () => {
-    it('should return SOLR_AUTH from environment', () => {
+    itIfSolr('should return SOLR_AUTH from environment', () => {
       const auth = solr.getSolrAuth();
 
       expect(auth).toBeDefined();
@@ -58,7 +67,7 @@ describe('solr.js', () => {
   });
 
   describe('Data Integrity', () => {
-    it('should have valid CIF format for all jobs', async () => {
+    itIfSolr('should have valid CIF format for all jobs', async () => {
       const result = await solr.querySOLR('17549799');
 
       for (const job of result.docs) {
@@ -66,7 +75,7 @@ describe('solr.js', () => {
       }
     });
 
-    it('should have valid status values', async () => {
+    itIfSolr('should have valid status values', async () => {
       const result = await solr.querySOLR('17549799');
       const validStatuses = ['scraped', 'tested', 'verified', 'published'];
 

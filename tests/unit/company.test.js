@@ -1,5 +1,14 @@
 import { jest } from '@jest/globals';
 
+const HAS_SOLR = !!process.env.SOLR_AUTH;
+
+function itIfSolr(name, fn, timeout) {
+  if (HAS_SOLR) {
+    return it(name, fn, timeout);
+  }
+  return it.skip(`${name} (skipped: SOLR_AUTH not set)`, fn, timeout);
+}
+
 describe('company.js', () => {
   let company;
 
@@ -17,7 +26,7 @@ describe('company.js', () => {
   });
 
   describe('validateAndGetCompany', () => {
-    it('should return company data with status active', async () => {
+    itIfSolr('should return company data with status active', async () => {
       const result = await company.validateAndGetCompany();
 
       expect(result).toHaveProperty('status');
@@ -27,7 +36,7 @@ describe('company.js', () => {
       expect(result.cif).toBe('17549799');
     });
 
-    it('should include existingJobsCount', async () => {
+    itIfSolr('should include existingJobsCount', async () => {
       const result = await company.validateAndGetCompany();
 
       expect(result).toHaveProperty('existingJobsCount');
