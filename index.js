@@ -3,7 +3,7 @@ import * as cheerio from "cheerio";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { validateAndGetCompany } from "./company.js";
-import { querySOLRByCompany, querySOLR, deleteJobsByCIF, upsertJobs } from "./solr.js";
+import { querySOLRByCompany, querySOLR, deleteJobsByCIF, upsertJobs, upsertCompany } from "./solr.js";
 
 const COMPANY_CIF = "17549799";
 const TIMEOUT = 15000;
@@ -248,6 +248,22 @@ async function main() {
     console.log("=== Step 1: Validate company via ANAF ===");
     const { company, cif } = await validateAndGetCompany();
     COMPANY_NAME = company;
+
+    try {
+      await upsertCompany({
+        id: cif,
+        company,
+        brand: "RANDSTAD",
+        status: "activ",
+        location: ["București"],
+        website: ["https://www.randstad.ro"],
+        career: ["https://www.randstad.ro/jobs/"],
+        lastScraped: new Date().toISOString().split('T')[0],
+        scraperFile: "https://raw.githubusercontent.com/sebiboga/randstad-romania-nodejs-scraper/master/.github/workflows/scrape.yml"
+      });
+    } catch (err) {
+      console.log(`Note: Could not upsert company to SOLR core: ${err.message}`);
+    }
 
     console.log("\n=== Step 2: Extract existing jobs from SOLR ===");
     let existingJobs = [];

@@ -176,6 +176,30 @@ export async function upsertJobs(jobs) {
   console.log(`✅ Upserted ${jobs.length} jobs to SOLR.`);
 }
 
+export async function upsertCompany(companyDoc) {
+  const AUTH = process.env.SOLR_AUTH;
+  if (!AUTH) throw new Error("SOLR_AUTH not set in environment");
+
+  const params = new URLSearchParams({ commit: "true" });
+
+  const res = await fetch(`${SOLR_COMPANY_URL}/update?${params}`, {
+    method: "POST",
+    headers: {
+      "Authorization": "Basic " + Buffer.from(AUTH).toString("base64"),
+      "Content-Type": "application/json",
+      "User-Agent": "job_seeker_ro_spider"
+    },
+    body: JSON.stringify([companyDoc])
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SOLR company upsert error: ${res.status} - ${text}`);
+  }
+
+  console.log(`✅ Company "${companyDoc.company}" upserted to SOLR company core.`);
+}
+
 async function checkUrl(url) {
   try {
     const res = await fetch(url, {
