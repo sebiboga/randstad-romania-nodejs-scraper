@@ -6,29 +6,35 @@ Cum se folosește:
 - Mergi prin fiecare secțiune și bifează ce e OK
 - Ce nu e bifat trebuie portat din EPAM
 
+Ultima verificare: 2026-06-01
+
+---
+
 ## 1. Repo About (GitHub)
 
-- [ ] **Description** — conține "Randstad" + "Romania" + "peviitor.ro"
-- [ ] **Topics** — `randstad-romania`, `job-seeker-ro-spider`, `peviitor-ro` (EPAM are `job-seeker-ro-spider`, `peviitor-ro`)
-- [ ] **Homepage/Website** — setat la GitHub Pages URL (dacă există)
+- [x] **Description** — ✅ "web scraper pentru a aduce locurile de munca de la RANDSTAD Romania in platforma peviitor.ro"
+- [x] **Topics** — ✅ `job-seeker-ro-spider`, `peviitor-ro` (EPAM are aceleași)
+- [x] **Homepage/Website** — ✅ setat la `https://sebiboga.github.io/randstad-romania-nodejs-scraper/`
 
 ```bash
-gh repo view <owner>/<repo> --json description,homepageUrl,repositoryTopics
+gh repo view sebiboga/randstad-romania-nodejs-scraper --json description,homepageUrl,repositoryTopics
 ```
+
+---
 
 ## 2. Fișiere root
 
 | Fișier | EPAM | Randstad | Syncat? |
 |--------|------|----------|---------|
-| `index.js` | ✅ | ✅ | |
-| `company.js` | ✅ | ✅ | |
-| `demoanaf.js` / `src/anaf.js` | ✅ (ambele) | ✅ (doar demoanaf.js) | |
-| `solr.js` | ✅ | ✅ | |
-| `validate-jobs.js` | ✅ | ✅ | |
-| `company.json` | ✅ | ✅ | |
-| `package.json` | ✅ | ✅ | |
-| `.gitignore` | ✅ | ✅ | |
-| `.npmrc` | ✅ | ✅ | |
+| `index.js` | ✅ | ✅ | ⚠️ logică complet diferită (API JSON vs HTML scraping) |
+| `company.js` | ✅ | ✅ | ⚠️ matching: EPAM by name prefix, Randstad by CIF; SOLR query: EPAM by CIF, Randstad by company name |
+| `demoanaf.js` / `src/anaf.js` | ✅ (ambele) | ✅ (doar demoanaf.js) | ⚠️ EPAM separă src/anaf.js, Randstad are totul în demoanaf.js |
+| `solr.js` | ✅ | ✅ | ✅ funcții comune identice; Randstad are extra `querySOLRByCompany` + `stripInternalFields` |
+| `validate-jobs.js` | ✅ (`tests/`) | ✅ (root) | ⚠️ locații diferite, CLI args diferite, logici diferite |
+| `company.json` | ✅ (committed) | ✅ (gitignored) | ❌ Randstad îl ignoră în .gitignore (line 48), EPAM îl commit-uie |
+| `package.json` | ✅ | ✅ | ✅ identice (structură, versiuni, dependințe) |
+| `.gitignore` | ✅ | ✅ | ⚠️ Randstad ignoră `company.json` + `expired-jobs.json` vs EPAM ignoră `epam_response.json` |
+| `.npmrc` | ✅ | ✅ | ✅ identice |
 | `CHANGELOG.md` | ✅ | ✅ | |
 | `README.md` | ✅ | ✅ | |
 | `CONTRIBUTING.md` | ✅ | ✅ | |
@@ -39,75 +45,96 @@ gh repo view <owner>/<repo> --json description,homepageUrl,repositoryTopics
 | `files.md` | ✅ | ✅ | |
 | `instructions.md` | ✅ | ✅ | |
 | `delete_request.json` | ✅ | ✅ | |
-| `AGENTS.md` | ✅ | ❌ | |
-| `ISSUES.md` | ✅ | ❌ | |
-| `ROBOTS.md` | ✅ | ❌ | |
-| `TOPICS.md` | ✅ | ❌ | |
-| `UPDATE-REPO-ABOUT.md` | ✅ | ❌ | |
+| `AGENTS.md` | ✅ | ✅ | |
+| `ISSUES.md` | ✅ | ✅ | |
+| `ROBOTS.md` | ✅ | ✅ | |
+| `TOPICS.md` | ✅ | ✅ | |
+| `UPDATE-REPO-ABOUT.md` | ✅ | ✅ | |
 | `FROM-EPAM.md` | ❌ | ✅ | |
 
 ### De verificat la fiecare fișier comun
 
-- [ ] **Structura și exporturile** sunt aceleași (aceleași funcții, aceiași parametri)
-- [ ] **HEADER-ele de identificare** (User-Agent: `job_seeker_ro_spider`) sunt prezente
-- [ ] **Configurările SOLR** (URL-uri, auth, query pattern) sunt aliniate
-- [ ] **Retry logic** (număr de încercări, delay) e același
-- [ ] **Caching logic** (company.json fallback) e același
+- [x] **Structura și exporturile** sunt aceleași — ⚠️ parțial: solr.js și company.js au funcții în comun, dar index.js e complet diferit
+- [x] **HEADER-ele de identificare** (User-Agent: `job_seeker_ro_spider`) — ✅ Randstad: 13 locații, EPAM: 17 locații
+- [x] **Configurările SOLR** (URL-uri, auth, query pattern) — ✅ aliniate
+- [x] **Retry logic** — ⚠️ TIMEOUT: EPAM=10000ms, Randstad=15000ms în index.js; solr.js TIMEOUT=10000 la ambele
+- [x] **Caching logic** (company.json fallback) — ✅ aceeași
+
+---
 
 ## 3. Tests
 
 | Cale | EPAM | Randstad | Syncat? |
 |------|------|----------|---------|
-| `tests/unit/solr.test.js` | ✅ | ✅ | |
-| `tests/unit/company.test.js` | ✅ | ✅ | |
-| `tests/unit/demoanaf.test.js` | ✅ | ✅ | |
-| `tests/unit/index.test.js` | ✅ | ✅ | |
-| `tests/integration/workflow.test.js` | ✅ | ✅ | |
-| `tests/e2e/scraper.test.js` | ✅ | ✅ | |
-| `tests/company.json` | ✅ | ✅ | |
-| `tests/validate-epam-jobs.js` | ✅ `tests/` | ⚠️ `validate-jobs.js` (root) | |
-| `tests/package.json` | ✅ | ❌ | |
-| `tests/package-lock.json` | ✅ | ❌ | |
-| `tests/node_modules/` | ✅ | ❌ | |
+| `tests/unit/solr.test.js` | ✅ (20 teste, mock-uri) | ✅ (6 teste, API real) | ❌ filosofie complet diferită |
+| `tests/unit/company.test.js` | ✅ (10 teste, mock-uri) | ✅ (3 teste, API real) | ❌ filosofie complet diferită |
+| `tests/unit/demoanaf.test.js` | ✅ (13 teste, mock-uri) | ✅ (3 teste, API real) | ❌ filosofie complet diferită |
+| `tests/unit/index.test.js` | ✅ (13 teste, funcții pure) | ✅ (5 teste, inclusiv real searchAllPortals) | ⚠️ diferit |
+| `tests/integration/workflow.test.js` | ✅ (~16 teste, cu `itIfSolr`) | ✅ (4 teste, fără `itIfSolr`) | ❌ EPAM testează ANAF+Peviitor+SOLR, Randstad doar workflow basic |
+| `tests/e2e/scraper.test.js` | ✅ (~16 teste, cu `itIfSolr`) | ✅ (2 teste, fără `itIfSolr`) | ❌ EPAM testează API real+parse+SOLR, Randstad doar ANAF basic |
+| `tests/company.json` | ✅ | ✅ | ✅ ambele au cached company data |
+| `tests/validate-epam-jobs.js` | ✅ `tests/` | ⚠️ `validate-jobs.js` (root) | ❌ logici diferite (EPAM: peviitor API; Randstad: content-based) |
+| `tests/package.json` | ✅ | ❌ | — |
+| `tests/package-lock.json` | ✅ | ❌ | — |
+| `tests/node_modules/` | ✅ | ❌ | — |
+
+### Total teste
+
+| Tip | EPAM | Randstad |
+|-----|------|----------|
+| Unit | 56 | 17 |
+| Integration | ~16 | 4 |
+| E2E | ~16 | 2 |
+| **Total** | **~88** | **23** |
 
 ### De verificat
 
-- [ ] **Validator script**: EPAM are `tests/validate-epam-jobs.js`; Randstad are `validate-jobs.js` în root — verifică dacă logica e aceeași
-- [ ] **tests/package.json + tests/node_modules/** — EPAM le are, Randstad nu. E posibil să nu fie necesare (Randstad rulează validarea din root)
-- [ ] Numărul de teste unitare e același (EPAM: 56, Randstad: 18)
-- [ ] Testele de integrare acoperă aceleași scenarii (ANAF, SOLR, Peviitor, Full Validation)
-- [ ] Testele E2E sunt similare (scrape complet cu API-uri reale)
-- [ ] `itIfSolr` — testele SOLR sar automat când `SOLR_AUTH` lipsește
-- [ ] `--test` mode testat (single page / single portal)
+- [x] **Validator script**: EPAM are `tests/validate-epam-jobs.js` (172 linii, peviitor API); Randstad are `validate-jobs.js` în root (235 linii, content-based) — ❌ logici fundamental diferite
+- [x] **tests/package.json + tests/node_modules/** — EPAM le are, Randstad nu. Nu sunt necesare (Randstad rulează din root)
+- [x] **Numărul de teste unitare** — EPAM: 56, Randstad: 17 (diferență majoră de acoperire)
+- [x] **Testele de integrare** — EPAM are `itIfSolr` + teste ANAF+Peviitor+SOLR; Randstad nu are `itIfSolr`
+- [x] **Testele E2E** — EPAM testează API real+parse+SOLR; Randstad doar ANAF basic
+- [x] **`itIfSolr`** — EPAM îl folosește; Randstad NU ❌
+- [x] **`--test` mode** — EPAM are `testMode` flag, Randstad nu
+
+---
 
 ## 4. Docs
 
 | Cale | EPAM | Randstad | Syncat? |
 |------|------|----------|---------|
-| `docs/README.md` | ✅ | ? | |
-| `docs/index.html` | ✅ | ? | |
+| `docs/README.md` | ✅ | ✅ | |
+| `docs/index.html` | ✅ | ✅ | |
+
+---
 
 ## 5. GitHub Actions
 
 | Workflow | EPAM | Randstad | Syncat? |
 |----------|------|----------|---------|
-| `scrape.yml` | ✅ | ✅ | |
-| `test.yml` | ✅ | ✅ | |
+| `scrape.yml` | ✅ | ✅ | ⚠️ Randstad are push trigger în plus; nume diferit |
+| `test.yml` | ✅ | ✅ | ✅ identice (după issue #14) |
+| `deploy.yml` | ✅ (GitHub Pages) | ❌ | — |
 
 ### De verificat
 
-- [ ] **Scrape workflow** — aceleași cron trigger, aceleași env vars, același script `npm run scrape`
-- [ ] **Test workflow** — aceleași job-uri (`ensure-company-core`, `unit`, `integration`, `e2e`)
-- [ ] **ensure-company-core** — inserează compania corectă (EPAM vs Randstad) în SOLR company core
-- [ ] **Test timeout** — `--testTimeout=60000` setat la integration și e2e
-- [ ] **Secret SOLR_AUTH** — setat în GitHub repo secrets
+- [x] **Scrape workflow** — ✅ același cron (`0 6 * * *`), env vars, script; ⚠️ Randstad rulează și pe push la master
+- [x] **Test workflow** — ✅ aceleași job-uri
+- [x] **ensure-company-core** — ✅ date specifice companiei (CIF, brand, URL-uri)
+- [x] **Test timeout** — `--testTimeout=60000` setat
+- [x] **Secret SOLR_AUTH** — setat în GitHub repo secrets
+- [x] **deploy.yml** — EPAM are workflow pentru GitHub Pages; Randstad nu — probabil nefolosit
+
+---
 
 ## 6. package.json
 
-- [ ] **Scripts** — aceleași comenzi (`test`, `test:unit`, `test:integration`, `test:e2e`, `scrape`)
-- [ ] **Dependencies** — aceleași pachete (`node-fetch`, etc.)
-- [ ] **Jest config** — `testTimeout: 30000` (nu `defaultTimeout`)
-- [ ] **`--no-deprecation`** flag în toate scripturile Node
+- [x] **Scripts** — ✅ identice (`test`, `test:unit`, `test:integration`, `test:e2e`, `scrape`)
+- [x] **Dependencies** — ✅ identice (`node-fetch`, `cheerio`, `dotenv`, `jest`, `jest-html-reporter`)
+- [x] **Jest config** — ✅ `testTimeout: 30000`
+- [x] **`--no-deprecation`** flag — ✅ în toate scripturile Node
+
+---
 
 ## 7. Configurări specifice EPAM care trebuie adaptate la Randstad
 
@@ -118,23 +145,37 @@ gh repo view <owner>/<repo> --json description,homepageUrl,repositoryTopics
 | API: `careers.epam.com/api/jobs/v2/...` | API: `randstad.ro` + `jobRapid.ro` | ✅ |
 | Country ID: `8150000000000001155` | N/A (HTML scraping) | ✅ |
 | `src/anaf.js` separat | ANAF direct în `demoanaf.js` | ⚠️ |
+| TIMEOUT=10000 | TIMEOUT=15000 | ⚠️ |
+| Mock-uri în teste | API-uri reale în teste | ⚠️ |
+| `itIfSolr` prezent | `itIfSolr` lipsă | ⚠️ |
+
+---
 
 ## 8. Îmbunătățiri recente pe EPAM de portat
 
-Treci prin commit-urile recente de pe EPAM (`git log --oneline -20`) și verifică dacă îmbunătățirile sunt deja aplicate aici.
+### Aplicate deja
 
-### Listă îmbunătățiri cunoscute
+- [x] **User-Agent `job_seeker_ro_spider`** — setat pe toate request-urile HTTP (#11)
+- [x] **Punycode DEP0040 warning** — `--no-deprecation` flag în scripturi (#10)
+- [x] **`defaultTimeout` → `testTimeout`** — corectat în package.json jest config
+- [x] **SOLR upsertCompany** — `upsertCompany()` în solr.js, apelat din index.js:main() (#12)
+- [x] **CIF regex fix** — `/^\d{7}$/` → `/^\d{7,}$/` (#15)
+- [x] **validate-jobs job** — adăugat în test.yml (#14)
+- [x] **AGENTS.md** — creat (#4)
+- [x] **ISSUES.md** — creat (#5)
+- [x] **ROBOTS.md** — creat (#6)
+- [x] **TOPICS.md** — creat (#7)
+- [x] **UPDATE-REPO-ABOUT.md** — creat (#8)
+- [x] **docs/README.md** — creat (#9)
 
-- [ ] **User-Agent `job_seeker_ro_spider`** — setat pe toate request-urile HTTP (EPAM: 17 locații, Randstad: 13 locații)
-- [ ] **Punycode DEP0040 warning** — `--no-deprecation` flag în scripturi
-- [ ] **`defaultTimeout` → `testTimeout`** — corectat în package.json jest config
-- [ ] **SOLR upsertCompany** — `upsertCompany()` în solr.js, apelat din index.js:main()
-- [ ] **Invalid CIF test timeout** — 60000ms în loc de 30000ms
-- [ ] **AGENTS.md** — reguli pentru AI agents (tmp/, issues, ESM+Jest)
-- [ ] **ISSUES.md** — regulă: orice modificare de cod trebuie să aibă issue
-- [ ] **TOPICS.md** — documentează topic-urile din repo About
-- [ ] **UPDATE-REPO-ABOUT.md** — cum se actualizează secțiunea About
-- [ ] **ROBOTS.md** — analiză robots.txt și politici de scraping
+### Găsite la verificare
+
+- [ ] **Test coverage gap** — EPAM: 56 unit + ~32 integration/e2e = ~88 teste; Randstad: 17 unit + 6 integration/e2e = 23 teste
+- [ ] **`itIfSolr` helper** — Randstad nu are teste SOLR condiționale; testele sar cu eroare când `SOLR_AUTH` lipsește
+- [ ] **`--no-deprecation` in test scripts** — EPAM are în toate scripturile de test; Randstad la fel (✅)
+- [ ] **company.json în .gitignore** — Randstad ignoră `company.json`, EPAM îl commit-uie. De decis comportamentul dorit
+
+---
 
 ## Cum se rulează verificarea
 
@@ -148,7 +189,7 @@ cd /path/to/randstad
 diff <(ls /path/to/epam/*.js) <(ls *.js)
 
 # 3. Verifică topic-urile
-gh repo view <owner>/randstad-romania-nodejs-scraper --json repositoryTopics
+gh repo view sebiboga/randstad-romania-nodejs-scraper --json repositoryTopics
 
 # 4. Rulează testele
 npm run test:unit
