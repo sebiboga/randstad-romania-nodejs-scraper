@@ -16,7 +16,7 @@ export async function getCompanyFromANAF(cif) {
     try {
       const url = `${ANAF_API_URL}${cif}`;
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0" }
+        headers: { "User-Agent": "job_seeker_ro_spider" }
       });
 
       if (!res.ok) {
@@ -64,7 +64,7 @@ export async function getCompanyFromANAFWithFallback(cif, cachedData = null) {
 export async function searchCompany(brandName) {
   const url = `${ANAF_SEARCH_URL}?q=${encodeURIComponent(brandName)}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0" }
+    headers: { "User-Agent": "job_seeker_ro_spider" }
   });
 
   if (!res.ok) {
