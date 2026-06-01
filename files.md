@@ -16,6 +16,8 @@
 | `instructions.md` | Project documentation - workflow, technologies, API endpoints, how to update models |
 | `job-model.md` | Job schema definition (Peviitor Core) - fields, types, validation rules |
 | `company-model.md` | Company schema definition (Peviitor Core) - fields, types, validation rules |
+| `FROM-EPAM.md` | Documentează relația cu EPAM scraper — ce se sincronizează, ce nu, cum se portează |
+| `SYNC-CHECKLIST.md` | Checklist pentru verificat că toate fișierele și setările din EPAM sunt prezente aici |
 | `files.md` | This file - documents role of each project file |
 
 ## Configuration Files
