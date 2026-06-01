@@ -65,9 +65,15 @@ gh repo view <owner>/<repo> --json description,homepageUrl,repositoryTopics
 | `tests/integration/workflow.test.js` | ✅ | ✅ | |
 | `tests/e2e/scraper.test.js` | ✅ | ✅ | |
 | `tests/company.json` | ✅ | ✅ | |
+| `tests/validate-epam-jobs.js` | ✅ `tests/` | ⚠️ `validate-jobs.js` (root) | |
+| `tests/package.json` | ✅ | ❌ | |
+| `tests/package-lock.json` | ✅ | ❌ | |
+| `tests/node_modules/` | ✅ | ❌ | |
 
 ### De verificat
 
+- [ ] **Validator script**: EPAM are `tests/validate-epam-jobs.js`; Randstad are `validate-jobs.js` în root — verifică dacă logica e aceeași
+- [ ] **tests/package.json + tests/node_modules/** — EPAM le are, Randstad nu. E posibil să nu fie necesare (Randstad rulează validarea din root)
 - [ ] Numărul de teste unitare e același (EPAM: 56, Randstad: 18)
 - [ ] Testele de integrare acoperă aceleași scenarii (ANAF, SOLR, Peviitor, Full Validation)
 - [ ] Testele E2E sunt similare (scrape complet cu API-uri reale)
@@ -119,7 +125,7 @@ Treci prin commit-urile recente de pe EPAM (`git log --oneline -20`) și verific
 
 ### Listă îmbunătățiri cunoscute
 
-- [ ] **User-Agent `job_seeker_ro_spider`** — setat pe toate request-urile HTTP (EPAM: 17 locații)
+- [ ] **User-Agent `job_seeker_ro_spider`** — setat pe toate request-urile HTTP (EPAM: 17 locații, Randstad: 13 locații)
 - [ ] **Punycode DEP0040 warning** — `--no-deprecation` flag în scripturi
 - [ ] **`defaultTimeout` → `testTimeout`** — corectat în package.json jest config
 - [ ] **SOLR upsertCompany** — `upsertCompany()` în solr.js, apelat din index.js:main()
