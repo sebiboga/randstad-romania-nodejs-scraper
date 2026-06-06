@@ -290,8 +290,8 @@ async function main() {
       count: existingJobs.length,
       jobs: existingJobs
     };
-    fs.writeFileSync("jobs_existing.json", JSON.stringify(existingBackup, null, 2), "utf-8");
-    console.log(`Saved ${existingJobs.length} existing jobs to jobs_existing.json`);
+    fs.writeFileSync("tmp/jobs_existing.json", JSON.stringify(existingBackup, null, 2), "utf-8");
+    console.log(`Saved ${existingJobs.length} existing jobs to tmp/jobs_existing.json`);
 
     console.log("\n=== Step 3: Search job portals for new jobs ===");
     let portalJobs = [];
@@ -332,8 +332,8 @@ async function main() {
     console.log("Transforming jobs for SOLR...");
     const transformedPayload = transformJobsForSOLR(payload);
 
-    fs.writeFileSync("jobs.json", JSON.stringify(transformedPayload, null, 2), "utf-8");
-    console.log("Saved jobs.json");
+    fs.writeFileSync("tmp/jobs.json", JSON.stringify(transformedPayload, null, 2), "utf-8");
+    console.log("Saved tmp/jobs.json");
 
     console.log("\n=== Step 5: Delete old jobs by CIF ===");
     await deleteJobsByCIF(cif);
