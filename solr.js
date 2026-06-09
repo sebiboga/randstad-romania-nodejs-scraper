@@ -2,7 +2,7 @@ import fetch from "node-fetch";
 import fs from "fs";
 import { loadEnvFile } from "node:process";
 
-loadEnvFile(".env.local");
+try { loadEnvFile(".env.local"); } catch { }
 
 const SOLR_URL = "https://solr.peviitor.ro/solr/job";
 const SOLR_COMPANY_URL = "https://solr.peviitor.ro/solr/company";

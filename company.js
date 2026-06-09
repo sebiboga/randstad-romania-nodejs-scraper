@@ -28,7 +28,11 @@ const COMPANY_MODEL_FIELDS = [
 async function getCompanyFromPeviitor(companyName) {
   const url = `${Peviitor_API_URL}?name=${encodeURIComponent(companyName)}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "job_seeker_ro_spider" }
+    headers: {
+      "User-Agent": "job_seeker_ro_spider",
+      "origin": "https://peviitor.ro",
+      "referer": "https://peviitor.ro/"
+    }
   });
 
   if (!res.ok) {
