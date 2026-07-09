@@ -1,0 +1,100 @@
+{
+  "validatedAt": "2026-07-09T10:00:00.000Z",
+  "source": "ANAF",
+  "brand": "RANDSTAD",
+  "anaf": {
+    "cui": 17549799,
+    "name": "RANDSTAD ROMANIA SRL",
+    "address": "MUNICIPIUL BUCUREŞTI, SECTOR 2, ŞOS. PANTELIMON, NR.291, CORP A, ETAJ 1, CAMERA 3",
+    "registrationNumber": "J40/1758/1991",
+    "phone": "",
+    "fax": "",
+    "postalCode": "021619",
+    "caenCode": "7810",
+    "iban": "",
+    "registrationState": "",
+    "registrationDate": "1991-05-16",
+    "fiscalAuthority": "Direcţia Generală a Finanţelor Publice Municipiul Bucureşti",
+    "ownershipForm": "PROPR.PRIVATA-CAPITAL PRIVAT STRAIN",
+    "organizationForm": "PERSOANA JURIDICA",
+    "legalForm": "SOCIETATE COMERCIALĂ CU RĂSPUNDERE LIMITATĂ",
+    "vatRegistered": true,
+    "vatPeriods": [
+      {
+        "start": "2003-07-01",
+        "end": null,
+        "yearStart": "",
+        "message": ""
+      }
+    ],
+    "cashBasisVat": false,
+    "cashBasisVatStart": null,
+    "cashBasisVatEnd": null,
+    "inactive": false,
+    "inactiveSince": null,
+    "reactivatedSince": null,
+    "splitVat": false,
+    "eFacturaRegistered": false,
+    "headquartersAddress": {
+      "street": "Şos. Pantelimon",
+      "number": "291",
+      "locality": "Sector 2 Mun. Bucureşti",
+      "county": "MUNICIPIUL BUCUREŞTI",
+      "country": "",
+      "postalCode": "021619"
+    },
+    "fiscalAddress": {
+      "street": "",
+      "number": "",
+      "locality": "",
+      "county": "",
+      "country": "",
+      "postalCode": ""
+    },
+    "administrators": [
+      {
+        "name": "WOUTER WILLEM DE GEEST",
+        "role": "administrator"
+      }
+    ],
+    "authorizedCaenCodes": [
+      "7810",
+      "7820",
+      "7830",
+      "7022",
+      "7490",
+      "8559"
+    ],
+    "onrcStatus": 1048,
+    "onrcStatusLabel": "Funcțiune"
+  },
+  "peviitor": {
+    "id": "17549799",
+    "company": "RANDSTAD ROMANIA SRL",
+    "brand": "RANDSTAD",
+    "group": "Randstad",
+    "status": "activ",
+    "website": [
+      "https://www.randstad.ro"
+    ],
+    "career": [
+      "https://www.randstad.ro/jobs/"
+    ],
+    "lastScraped": "2026-07-08",
+    "scraperFile": "randstad.md",
+    "_version_": 1862291263324160000,
+    "_root_": "17549799"
+  },
+  "summary": {
+    "company": "RANDSTAD ROMANIA SRL",
+    "cif": "17549799",
+    "active": true,
+    "inactiveSince": null,
+    "reactivatedSince": null,
+    "address": "MUNICIPIUL BUCUREŞTI, SECTOR 2, ŞOS. PANTELIMON, NR.291, CORP A, ETAJ 1, CAMERA 3",
+    "registrationNumber": "J40/1758/1991",
+    "caenCode": "7810",
+    "vatRegistered": true,
+    "eFacturaRegistered": false
+  }
+}

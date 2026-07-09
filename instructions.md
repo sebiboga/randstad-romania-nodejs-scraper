@@ -2,14 +2,9 @@
 
 ## Project Purpose
 
-This scraper manages job listings for RANDSTAD ROMANIA SRL (CIF 17549799) and imports them to peviitor.ro.
+This scraper extracts job listings from randstad.ro and jobRapid.ro (Romania only) and imports them to peviitor.ro.
 
-Target: RANDSTAD ROMANIA SRL - Recruitment and workforce placement agency
-
-Related entities under the RANDSTAD brand group:
-- RANDSTAD SOURCERIGHT S.R.L. (47038249)
-- RANDSTAD DIGITAL ROMÂNIA S.R.L. (19522633)
-- RANDSTAD STAFFING SRL (32743070)
+Target: https://www.randstad.ro/jobs/
 
 ## Model Schemas
 
@@ -44,7 +39,7 @@ When working on this scraper:
 
 - **Node.js & JavaScript** - For scraping and data extraction
 - **Apache SOLR** - For data storage and indexing
-- **OpenCode + Big Pickle** - For development
+- **Claude Code** - For development
 
 ## Workflow Steps
 
@@ -52,23 +47,15 @@ When working on this scraper:
 2. **Search in DemoANAF** - Find company by brand, get CIF from search results
 3. **Get company details from ANAF** - Using CIF, fetch full company data from ANAF
 4. **Validate with Peviitor** - Verify company exists in Peviitor, get group/brand info
-5. **Check existing jobs in SOLR** - Query SOLR by company name (`RANDSTAD*`) to get existing jobs
+5. **Check existing jobs in SOLR** - Query SOLR by CIF to see what jobs already exist
 6. **Check company status** - If ANAF status = "inactive" → DELETE existing jobs from SOLR and STOP
 7. **Save company.json** - Save all ANAF + Peviitor data for backup
-8. **Filter existing jobs** - Keep only known-good sources (`mediere.anofm.ro`, `randstad.ro`, `jobrapid.ro`), reject everything else
-9. **Add CIF to filtered existing jobs** - Full push: add CIF to legitimate jobs for re-upload
-10. **Search for new jobs** - randstad.ro career page + jobRapid.ro (company page URL)
-11. **Delete all old jobs by CIF** - Clean slate before uploading clean set
-12. **Upsert clean jobs to SOLR** - Import/update the filtered set in SOLR
-
-### Important Design Decisions
-
-- **randstad.ro is the primary source** — their own career page at https://www.randstad.ro/jobs/ lists all current openings
-- **jobRapid.ro is a secondary source** — may have additional listings under the RANDSTAD brand
-- **Existing jobs are filtered** by known-good URL patterns before re-upload to prevent polluting SOLR with bad data
-- **Full delete-before-upsert** — all jobs for the CIF are deleted before uploading the clean set, ensuring no stale data remains
-- **SOLR internal fields (`_version_`)** are stripped before upsert to avoid version conflict errors (HTTP 409)
-- **jobRapid.ro URL filter** checks path segments, length, and blacklists navigation keywords to exclude non-job URLs
+8. **Scrape new jobs** - Extract jobs from randstad.ro, jobRapid.ro, and ANOFM
+9. **Transform for SOLR** - Validate and fix job data:
+   - location: Extract from job title or default
+   - company: uppercase
+10. **Upsert to SOLR** - Import/update jobs in SOLR
+11. **Verify URLs** - Check existing job URLs still work, delete 404s
 
 ## Running the Scraper
 
@@ -79,11 +66,87 @@ export SOLR_AUTH=your-solr-credentials
 # Run the full scraper workflow (single command)
 node index.js
 
-# Test mode (add CIF only, no portal scraping)
+# Test mode (one page only, limit 10 jobs)
 node index.js --test
 ```
 
-> **Important**: Scraper does full push — reads existing jobs, filters by known-good sources, adds CIF, deletes old data, re-uploads. This ensures only legitimate jobs are in SOLR.
+> **Important**: Scraper does NOT delete jobs from other sources (ANOFM, etc). It only upserts randstad.ro + jobRapid.ro jobs. Existing jobs are preserved.
+
+## Full Workflow (automatic)
+
+When running `node index.js`, the following steps happen automatically:
+
+1. **Check existing jobs count** - Query SOLR by CIF (read-only)
+2. **Validate company via ANAF** - Check company exists and is active
+3. **Scrape jobs** - Extract jobs from randstad.ro, jobRapid.ro, and ANOFM
+4. **Transform for SOLR** - Fix locations (only Romanian cities), normalize fields
+5. **Upsert to SOLR** - Add/update jobs (SOLR handles duplicates by URL)
+6. **Show Summary** - Log job counts
+
+**Important**: We do NOT delete existing jobs! This preserves jobs from other sources (ANOFM, etc).
+
+## Workflow Flowchart
+
+```
+config/company.json (single source of truth: CIF, brand, URLs)
+    │
+    ▼
+index.js
+    │
+    ▼
+querySOLR(CIF) - just count, don't delete
+    │
+    ▼
+company.js (validate company)
+    ├── load cache (tmp/company.json → company.json)
+    │   └── if fresh (<7 days), skip ANAF entirely
+    ├── ANAF API ──► get company name + CIF (only if cache stale/missing)
+    ├── Peviitor API ──► validate company model
+    └── SOLR ──► check existing jobs count
+    │
+    ▼ (if active)
+scrape portals (randstad.ro + jobRapid.ro + ANOFM)
+    │
+    ▼
+transformJobsForSOLR()
+    ├── Filter: keep only Romanian locations
+    │         (Bucharest, Cluj-Napoca, etc)
+    ├── Fallback: "România" for unknown
+    └── Format: lowercase tags, uppercase company
+    │
+    ▼
+upsertJobs() - SOLR handles duplicate by URL
+    │
+    ▼
+generateJobsMarkdown() → docs/jobs.md
+    └── committed to repo by CI → available on GitHub Pages
+```
+
+## File Responsibilities
+
+| File | Role |
+|------|------|
+| `config/company.json` | **Single source of truth** for company identity (CIF, brand, URLs, API params) |
+| `config/company.js` | ESM wrapper that loads `config/company.json` for Node code |
+| `index.js` | Main entry point - full workflow: validate company → scrape → transform → upsert → generate docs/jobs.md |
+| `company.js` | Validates company via ANAF + Peviitor; caches in root `company.json` (7-day TTL) and `tmp/company.json` |
+| `solr.js` | SOLR operations module - query, delete, upsert jobs + standalone commands |
+| `validate-jobs.js` | Manual deep validator (content-aware); thin CLI wrapper over `src/job-validator.js` |
+| `src/anaf.js` | ANAF API core module - searchCompany(brand) and getCompanyFromANAF(cif) with 3-retry/2s-backoff |
+| `src/markdown-generator.js` | Generates `docs/jobs.md` with company info and all scraped jobs |
+| `src/job-validator.js` | Shared validation primitives: `validateByHead`, `validateByContent`, `DEFAULT_EXPIRED_KEYWORDS` |
+| `demoanaf.js` | CLI entry point for ANAF module (thin wrapper around src/anaf.js) |
+| `tests/validate-randstad-jobs.js` | CI fast validator (HEAD only); thin CLI over `src/job-validator.js` + `solr.js` |
+| `tests/unit/index.test.js` | Unit tests for mapToJobModel, transformJobsForSOLR |
+| `tests/unit/company.test.js` | Unit tests for validateAndGetCompany and fallback caching |
+| `tests/unit/solr.test.js` | Unit tests for SOLR query, upsert, delete operations |
+| `tests/unit/demoanaf.test.js` | Unit tests for ANAF search and company retrieval |
+| `tests/integration/workflow.test.js` | Live integration tests - ANAF + SOLR |
+| `tests/e2e/scraper.test.js` | End-to-end tests with real APIs |
+| `tests/consistency/public.test.js` | Verifies repo is public on GitHub |
+| `tests/consistency/repo.test.js` | Verifies branch, Pages, secrets, workflow files |
+| `tests/consistency/topics.test.js` | Verifies required repo topics |
+| `tests/consistency/workflow-naming.test.js` | Validates workflow naming conventions |
 
 ## API Endpoints
 
@@ -92,11 +155,31 @@ node index.js --test
 - **Peviitor API**: `https://api.peviitor.ro/v1/company/`
 - **Solr**: `https://solr.peviitor.ro/solr/job` (auth: via `SOLR_AUTH` environment variable)
 
+## Rate Limiting & Politeness
+
+The scraper is intentionally slow to be a good citizen:
+
+| Setting | Value | Where |
+|---------|-------|-------|
+| Delay between pages | 1000 ms | `index.js` — `sleep(1000)` in `scrapeAllListings()` |
+| Page size | 10 jobs | `index.js` — `PAGE_SIZE` constant |
+| Max pages | 10 | `index.js` — `MAX_PAGES` in `scrapeAllListings()` |
+| Request timeout | 10000 ms | `index.js` — `TIMEOUT` constant |
+| ANAF retries | 3 attempts, 2s exponential backoff | `src/anaf.js` |
+| Concurrency | 1 (sequential) | No `Promise.all` for paginated fetches |
+| User-Agent | `job_seeker_ro_spider` | Identifies the scraper in server logs |
+
+Derived scrapers should keep these defaults unless the target site explicitly permits otherwise.
+
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
 | `SOLR_AUTH` | SOLR credentials in format `user:password` |
+| `GITHUB_REPOSITORY` | Used by consistency tests — format: `owner/repo` |
+| `GITHUB_TOKEN` | GitHub API token for consistency tests |
+
+`dotenv` loads `.env.local` automatically at startup — set variables there for local runs. Never commit `.env.local`.
 
 ## Standalone Commands
 
@@ -104,8 +187,8 @@ node index.js --test
 # Verify jobs in SOLR by CIF
 node solr.js <CIF>
 
-# Extract existing jobs from SOLR by company name
-node solr.js extract <company_name>
+# Extract existing jobs from SOLR by CIF
+node solr.js extract <CIF>
 
 # Query company in SOLR
 node solr.js company <search_term>
@@ -115,25 +198,38 @@ node demoanaf.js <CIF>
 
 # Search companies in ANAF by brand
 node demoanaf.js search <brand>
+
+# Validate job URLs from SOLR by CIF (check active/expired)
+node validate-jobs.js <CIF>
+
+# Validate a single job URL
+node validate-jobs.js url <url>
+
+# Delete expired jobs from SOLR by CIF
+node validate-jobs.js <CIF> --delete
 ```
 
 ## Testing
 
+This project requires multiple levels of testing:
+
+1. **Unit Tests** - Test individual modules (solr.js, company.js) in isolation
+2. **Integration Tests** - Test API interactions (ANAF, Peviitor, SOLR) in `/tests/integration` folder
+3. **E2E Tests** - Test full workflow in `/tests/e2e` folder
+
+Run tests:
 ```bash
 npm test
 ```
 
-### Tests
+## Temporary Files
 
-| Layer | Pattern | Description |
-|-------|---------|-------------|
-| Unit | `tests/unit/` | Component-level tests (4 suites, 18 tests) |
-| Integration | `tests/integration/` | API workflow and company model validation |
-| E2E | `tests/e2e/` | Full scraping workflow end-to-end |
+All temporary/scratch files must be placed in `tmp/` inside the project root (never outside the project). The `tmp/` directory is in `.gitignore` and will not be committed.
 
-All tests require `SOLR_AUTH` environment variable set. The `ensure-company-core` job runs first to verify RANDSTAD exists in the company core.
+## Technical Debt / Completed
 
-## GitHub Actions
-
-- **WebScraper RANDSTAD to Peviitor** (`scrape.yml`): Daily at 6AM + manual `workflow_dispatch`, runs `npm run scrape`
-- **Automation Tests** (`test.yml`): On push/PR to master, runs `ensure-company-core` then all test layers
+- [x] Extract demoanaf.js to separate module (#2)
+- [x] Write Unit Tests for all modules (#3)
+- [x] Write Integration Tests in separate folder (#4)
+- [x] Write E2E automated tests in separate folder (#5)
+- [ ] Write Unit/Component/E2E tests for index.js

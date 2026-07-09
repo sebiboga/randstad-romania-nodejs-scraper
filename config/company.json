@@ -1,0 +1,9 @@
+{
+  "cif": "17549799",
+  "legalName": "RANDSTAD ROMANIA SRL",
+  "brand": "RANDSTAD",
+  "website": "https://www.randstad.ro",
+  "careerUrl": "https://www.randstad.ro/jobs/",
+  "defaultLocation": "București",
+  "scraperFile": "https://raw.githubusercontent.com/sebiboga/randstad-romania-nodejs-scraper/main/.github/workflows/job-seeker-ro-spider.yml"
+}

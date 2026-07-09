@@ -1,2 +1,5 @@
-# Default code owners
-* @sebiboga
+# Default owner
+*       @sebiboga
+
+# Code owners for specific directories
+/.github/workflows/ @sebiboga

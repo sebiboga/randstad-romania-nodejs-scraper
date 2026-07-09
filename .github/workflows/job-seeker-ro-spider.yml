@@ -1,0 +1,151 @@
+name: Oportunitati SI Cariere
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          
+      - name: Sync with remote
+        if: github.event_name != 'pull_request'
+        run: git pull origin main --rebase -X theirs
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Ensure company exists in Solr company core
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+        run: |
+          CIF=$(jq -r '.cif' config/company.json)
+          LEGAL_NAME=$(jq -r '.legalName' config/company.json)
+          BRAND=$(jq -r '.brand' config/company.json)
+          WEBSITE=$(jq -r '.website' config/company.json)
+          CAREER=$(jq -r '.careerUrl' config/company.json)
+          DEFAULT_LOC=$(jq -r '.defaultLocation' config/company.json)
+          SCRAPER_FILE=$(jq -r '.scraperFile' config/company.json)
+          TODAY=$(date -u +%Y-%m-%d)
+
+          echo "Upserting ${BRAND} (CIF: ${CIF}) into Solr company core..."
+          jq -n \
+            --arg id "$CIF" \
+            --arg company "$LEGAL_NAME" \
+            --arg brand "$BRAND" \
+            --arg website "$WEBSITE" \
+            --arg career "$CAREER" \
+            --arg loc "$DEFAULT_LOC" \
+            --arg today "$TODAY" \
+            --arg scraperFile "$SCRAPER_FILE" \
+            '[{id:$id,company:$company,brand:$brand,status:"activ",location:[$loc],website:[$website],career:[$career],lastScraped:$today,scraperFile:$scraperFile}]' \
+            > company_data.json
+
+          curl -s --user "${SOLR_AUTH}" \
+            "https://solr.peviitor.ro/solr/company/update/json?commit=true" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            --data-binary @company_data.json
+
+          FINAL=$(curl -s --user "${SOLR_AUTH}" \
+            "https://solr.peviitor.ro/solr/company/select?q=id:${CIF}&rows=1" | jq '.response.numFound')
+
+          echo "${BRAND} count after upsert: $FINAL"
+
+          if [ "$FINAL" -ge "1" ]; then
+            echo "✅ SUCCESS: ${BRAND} is in company core"
+          else
+            echo "❌ FAILED: ${BRAND} still not in company core"
+            exit 1
+          fi
+
+      - name: Pre-scrape — Unit Tests
+        run: |
+          npm run test:unit
+          LEGAL_NAME=$(jq -r '.legalName' config/company.json)
+          sed -i "s|<title>Test Report</title>|<title>Pre-scrape: Unit Tests — ${LEGAL_NAME}</title>|;s|<h1 id=\"title\">Test Report</h1>|<h1 id=\"title\">Pre-scrape: Unit Tests — ${LEGAL_NAME}</h1>|" test-report.html
+          cp test-report.html docs/test-results/pre-scrape-unit.html || true
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+
+      - name: Pre-scrape — Integration Tests
+        run: |
+          npm run test:integration
+          LEGAL_NAME=$(jq -r '.legalName' config/company.json)
+          sed -i "s|<title>Test Report</title>|<title>Pre-scrape: Integration Tests — ${LEGAL_NAME}</title>|;s|<h1 id=\"title\">Test Report</h1>|<h1 id=\"title\">Pre-scrape: Integration Tests — ${LEGAL_NAME}</h1>|" test-report.html
+          cp test-report.html docs/test-results/pre-scrape-integration.html || true
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+
+      - name: Run scraper
+        run: npm run scrape
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+          
+      - name: Check for new jobs
+        run: |
+          if [ -f tmp/jobs.json ]; then
+            echo "New jobs found:"
+            cat tmp/jobs.json | jq '.jobs | length'
+          else
+            echo "No new jobs or scrape failed"
+          fi
+
+      - name: Post-scrape — E2E Tests
+        run: |
+          npm run test:e2e
+          LEGAL_NAME=$(jq -r '.legalName' config/company.json)
+          sed -i "s|<title>Test Report</title>|<title>Post-scrape: E2E Tests — ${LEGAL_NAME}</title>|;s|<h1 id=\"title\">Test Report</h1>|<h1 id=\"title\">Post-scrape: E2E Tests — ${LEGAL_NAME}</h1>|" test-report.html
+          cp test-report.html docs/test-results/post-scrape.html || true
+        env:
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+
+      - name: Consistency Tests
+        run: |
+          npm run test:consistency
+          LEGAL_NAME=$(jq -r '.legalName' config/company.json)
+          sed -i "s|<title>Test Report</title>|<title>Post-scrape: Consistency Tests — ${LEGAL_NAME}</title>|;s|<h1 id=\"title\">Test Report</h1>|<h1 id=\"title\">Post-scrape: Consistency Tests — ${LEGAL_NAME}</h1>|" test-report.html
+          cp test-report.html docs/test-results/post-scrape-consistency.html || true
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOLR_AUTH: ${{ secrets.SOLR_AUTH }}
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: docs/test-results/
+          retention-days: 30
+
+      - name: Push test results to docs/
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/test-results/
+          git add docs/jobs.md || true
+          git commit -m "[skip ci] Update test results" || echo "No changes to commit"
+          git push || echo "Push failed (race condition) — will be picked up next run"
+          
+      - name: Upload jobs JSON
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: scraped-jobs
+          path: |
+            tmp/jobs.json
+            tmp/jobs_existing.json
+          retention-days: 7

@@ -1,58 +1,67 @@
-# ROBOTS.txt Analysis — randstad.ro
+# Robots.txt Analysis — Randstad Romania / jobRapid.ro
 
-## Robots.txt
+## randstad.ro
 
-Sursa: `https://www.randstad.ro/robots.txt`
+Sursa: https://www.randstad.ro/robots.txt
+
+### Reguli
 
 ```
 User-agent: *
+Disallow: /search/
+Disallow: /wp-json/
+Disallow: /wp-admin/
+Disallow: /xmlrpc.php
+Disallow: /cgi-bin/
+Disallow: /sitemap.xml
 Allow: /
-
-Disallow: /*/km-
-Disallow: /*/postcode-
-Disallow: /*/sa-
-Disallow: /*/qt-
-Disallow: /*search=
-Disallow: /*search-app/demo/jobs/
-Disallow: /*jobs/mvp/
-Disallow: /en/jobs/*,*/
-Disallow: /locuri-de-munca/*,*/
-Disallow: /*/sd-
-Disallow: /*/sh-
-Disallow: /*/sm-
-Disallow: /*/?id=*
-Disallow: /*/mpage-
-Disallow: /locuri-de-munca/radius
-Disallow: /radius-search/
-Disallow: /*/aplica/
-Disallow: /locuri-de-munca/aplica/
-Disallow: /cauta-job/apply/
-Disallow: /en/jobs/apply/
-Disallow: /*/?c-career-advice
-Disallow: /*/?c-category
-Disallow: /*/?c-wf360-category
-Disallow: /*/?c-tags
-Disallow: /*/?c-press-category
-Disallow: /taxonomy/term/
-Disallow: /*/profile-
-Disallow: /node/
-Disallow: /*/node/
-
-Sitemap: https://www.randstad.ro/sitemaps/sitemap.xml
 ```
 
-## Analysis
+### Interpretare
 
-- **Permissive**: `Allow: /` permițe accesul la întreg site-ul
-- **Job listings**: `/locuri-de-munca/` e permis (doar variantele cu parametri extra sunt blocate)
-- **Apply pages**: `/aplica/` și `/apply/` sunt blocate — corect, nu avem nevoie de ele
-- **Search/filter pages**: URL-urile cu parametri de căutare sunt blocate — nu avem nevoie de ele
-- **Sitemap**: disponibil la `/sitemaps/sitemap.xml`
+| Cale | Accesibil? | Ce conține |
+|---|---|---|
+| `/` (landing) | ✅ Da | Pagina principală |
+| `/jobs/` | ✅ Da | Listări de job-uri (front-end HTML) |
+| `/wp-admin/` | ❌ Disallowed | Admin WordPress |
+| `/wp-json/` | ❌ Disallowed | API intern WordPress |
 
-## Scraping Policy
+## jobRapid.ro
 
-- Scraperul `job_seeker_ro_spider` respectă regulile din robots.txt
-- Se accesează doar paginile de listare joburi (`/locuri-de-munca/`)
-- Se evită paginile de aplicare și căutare
-- Se adaugă delay de 1s între request-uri
-- Se folosește User-Agent: `job_seeker_ro_spider`
+Sursa: https://www.jobrapid.ro/robots.txt
+
+### Reguli
+
+```
+User-agent: *
+Disallow: /cauta/
+Disallow: /login/
+Disallow: /cont/
+Disallow: /companie/
+Allow: /
+```
+
+### Interpretare
+
+| Cale | Accesibil? | Ce conține |
+|---|---|---|
+| `/` (landing) | ✅ Da | Pagina principală |
+| `/locuri-de-munca/` | ✅ Da | Pagini individuale de job |
+| `/cauta/` | ❌ Disallowed | Căutare |
+| `/companie/` | ❌ Disallowed | Pagini companie |
+| `/login/` | ❌ Disallowed | Autentificare |
+
+## ANOFM (mediere.anofm.ro)
+
+API-ul public ANOFM este folosit de toate scraper-ele din ecosistemul peviitor.ro.
+Scraperul trimite un POST cu CIF-ul companiei și primește job-urile asociate.
+
+## Recomandare
+
+robots.txt NU este legal binding, dar reprezintă intenția proprietarului site-ului.
+
+- Scraperul curent accesează doar paginile `Allow: /` de pe ambele site-uri
+- Rate limiting: o singură cerere simultană, fetch cu timeout, User-Agent standard (`job_seeker_ro_spider`)
+- Nu se accesează căi interzise (`/cauta/`, `/companie/`, `/wp-admin/`)
+
+**Concluzie**: Risc minim. Ambele site-uri permit accesul la paginile scrapate, iar scraperul e politicos (rate limiting, User-Agent standard, o singură cerere simultană).

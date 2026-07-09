@@ -1,5 +1,5 @@
 {
-  "name": "randstad-romania-nodejs-scraper",
+"name": "scraper-randstad-ro",
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
@@ -8,7 +8,8 @@
     "test": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:unit": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=unit",
     "test:integration": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=integration",
-    "test:e2e": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=e2e"
+    "test:e2e": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=e2e",
+    "test:consistency": "node --no-deprecation --experimental-vm-modules node_modules/jest/bin/jest.js --testPathPattern=consistency"
   },
   "dependencies": {
     "node-fetch": "^3.3.2",

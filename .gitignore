@@ -42,10 +42,7 @@ jobs_existing.json
 jobs_valid.json
 company_data.json
 delete.json
-expired-jobs.json
-
-# Generated company cache (regenerated on each run via ANAF)
-company.json
+randstad_response.json
 
 # Credentials (NEVER commit these)
 *.pem
